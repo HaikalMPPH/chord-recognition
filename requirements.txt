@@ -2,3 +2,6 @@ streamlit
 scikit-learn
 joblib
 librosa
+numpy
+pandas
+scipy
