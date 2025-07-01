@@ -1,4 +1,10 @@
 # Created by venv; see https://docs.python.org/3/library/venv.html
-venv/
-model/*.joblib
-model/.ipynb_checkpoints
+Venv/
+
+Model/*.joblib
+Model/.ipynb_checkpoints
+Model/*.h5
+
+Datasets/*.mp3
+Datasets/misc/
+Datasets/exclue/
