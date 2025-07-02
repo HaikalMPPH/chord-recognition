@@ -12,10 +12,12 @@ import io
 import base64
 import tensorflow as tf
 
-MODEL = tf.keras.models.load_model("../Model/model_lstm.keras")
-ENCODER = joblib.load("../Model/encoder.xz")
+CWD = os.getcwd()
+print(f"Working directory: {CWD}")
+MODEL = tf.keras.models.load_model(CWD + "/../Model/model_lstm_cens_64_64.keras")
+ENCODER = joblib.load(CWD + "/../Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
-SEQ_LEN = 20 # 20 * 0.1 seconds
+SEQ_LEN = 10 # 20 * 0.1 seconds
 
 if __name__ == "__main__":
   st.title("Rechordnizer")
@@ -36,13 +38,17 @@ if __name__ == "__main__":
 
       # CQT
       y_harm = librosa.effects.harmonic(y=y, margin=8)
-      chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
-      chroma_filter = np.minimum(
-        chroma_harm,
-        librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
-      )
-      chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
-      chroma = chroma_smooth
+      #chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
+      #chroma_filter = np.minimum(
+      #  chroma_harm,
+      #  librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
+      #)
+      #chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
+      #chroma = chroma_smooth
+
+      # CENS
+      chroma_cens = librosa.feature.chroma_cens(y=y_harm, sr=sr, hop_length=hop_length)
+      chroma = chroma_cens
 
       features = []
       for idx in range(0, chroma.shape[1]):
@@ -79,6 +85,7 @@ if __name__ == "__main__":
       for i in range(first_predicted_frame_idx):
         frame_prediction[i] = initial_chord_prediction
 
+      # Fill the remaining Nones
       last_known_prediction = frame_prediction[0]
       for i in range(1, chroma.shape[1]):
         if frame_prediction is not None:
@@ -86,10 +93,22 @@ if __name__ == "__main__":
         else:
           frame_prediction[i] = last_known_prediction
 
+      # Smoothed out prediction with Window of 1 seconds (10 * .1)
+      window_size = 10
+      smoothed_prediction = []
+      # TODO: 2 itteration?
+      for i in range(len(frame_prediction)):
+        start = max(0, i - window_size // 2)
+        end = min(len(frame_prediction), i + window_size // 2 + 1)
+        window = frame_prediction[start:end]
+        chord_count = pd.Series(window).value_counts()
+        smoothed_prediction.append(chord_count.idxmax())
+
       prediction_df = pd.DataFrame({
         "start": start_time,
         "end": end_time,
-        "chord": frame_prediction,
+        #"chord": frame_prediction,
+        "chord": smoothed_prediction,
       })
 
       # :::::::: Merging repeating chords ::::::::
@@ -122,6 +141,7 @@ if __name__ == "__main__":
         "end": current_end,
         "chord": current_chord,
       })
+
 
       final_prediction_df = pd.DataFrame(merged_prediction)
       # ::::::::::::::::::::::::::::::::::::::::::

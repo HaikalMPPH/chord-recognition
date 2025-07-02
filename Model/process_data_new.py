@@ -14,7 +14,7 @@ import scipy.ndimage
 OUTPUT_FILE = 'dataset.h5'
 ROOT_DIR = '../Datasets'
 CQT_COL = ['Cqt_C', 'Cqt_Db', 'Cqt_D', 'Cqt_Eb', 'Cqt_E', 'Cqt_F', 'Cqt_Gb', 'Cqt_G', 'Cqt_Ab', 'Cqt_A', 'Cqt_Bb', 'Cqt_B']
-#CENS_COL = ['Cens_C', 'Cens_Db', 'Cens_D', 'Cens_Eb', 'Cens_E', 'Cens_F', 'Cens_Gb', 'Cens_G', 'Cens_Ab', 'Cens_A', 'Cens_Bb', 'Cens_B']
+CENS_COL = ['Cens_C', 'Cens_Db', 'Cens_D', 'Cens_Eb', 'Cens_E', 'Cens_F', 'Cens_Gb', 'Cens_G', 'Cens_Ab', 'Cens_A', 'Cens_Bb', 'Cens_B']
 SEGMENT_DURATION_SEC = 0.1 # 100 ms split
 
 if __name__ == "__main__":
@@ -82,16 +82,17 @@ if __name__ == "__main__":
     for y_aug, labels_aug in augmented_y_and_labels:
       # CQT
       y_harm = librosa.effects.harmonic(y=y_aug, margin=8)
-      chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
-      chroma_filter = np.minimum(
-        chroma_harm,
-        librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
-      )
-      chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
-      chroma = chroma_smooth
+      #chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
+      #chroma_filter = np.minimum(
+      #  chroma_harm,
+      #  librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
+      #)
+      #chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
+      #chroma = chroma_smooth
 
       # CENS
       #chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
+      chroma_cens = librosa.feature.chroma_cens(y=y_harm, sr=sr, hop_length=hop_length)
       
 
       # Extracting the chroma from a given timestamps
@@ -105,17 +106,20 @@ if __name__ == "__main__":
 
         # bounds check the index
         segment_start_idx = max(0, segment_start_idx)
-        segment_end_idx = min(chroma.shape[1], segment_end_idx)
+        #segment_end_idx = min(chroma.shape[1], segment_end_idx)
+        segment_end_idx = min(chroma_cens.shape[1], segment_end_idx)
 
         for idx in range(segment_start_idx, segment_end_idx):
           #segment = np.hstack((chroma[:, idx], chroma_cens[:, idx]))
-          segment = chroma[:, idx]
+          #segment = chroma[:, idx]
+          segment = chroma_cens[:, idx]
           feature_list.append(segment)
           label_list.append(chord_lbl)
 
       # Current file features
       #df_feature = pd.DataFrame(feature_list, columns=CQT_COL + CENS_COL).astype(np.float32)
-      df_feature = pd.DataFrame(feature_list, columns=CQT_COL).astype(np.float32)
+      #df_feature = pd.DataFrame(feature_list, columns=CQT_COL).astype(np.float32)
+      df_feature = pd.DataFrame(feature_list, columns=CENS_COL).astype(np.float32)
       df_feature["chord"] = label_list
       
       if not df_feature.empty:
@@ -129,11 +133,11 @@ if __name__ == "__main__":
       del df_feature
       del feature_list
       del label_list
-      del chroma
-      del chroma_harm
-      del chroma_smooth
-      del chroma_filter
-      #del chroma_cens
+      #del chroma
+      #del chroma_harm
+      #del chroma_smooth
+      #del chroma_filter
+      del chroma_cens
       gc.collect()
     print("DONE")
 

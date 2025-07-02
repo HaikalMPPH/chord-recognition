@@ -9,7 +9,7 @@ import joblib
 import random
 import gc
 
-SEQ_LEN = 20
+SEQ_LEN = 10
 
 if __name__ == "__main__":
   df = pd.read_hdf("./dataset.h5", key="df")
@@ -132,5 +132,5 @@ if __name__ == "__main__":
   #print("f1       : ", sk.metrics.f1_score(y_seq_test, y_pred, average='macro'))
 
   # Saving models
-  model_lstm.save("model_lstm.keras")
+  model_lstm.save("model_lstm_cqt_64_64.keras")
   pd.DataFrame(history.history).to_csv("history.csv", index=False)
