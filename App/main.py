@@ -12,10 +12,8 @@ import io
 import base64
 import tensorflow as tf
 
-CWD = os.getcwd()
-print(f"Working directory: {CWD}")
-MODEL = tf.keras.models.load_model(CWD + "/../Model/model_lstm_cens.keras")
-ENCODER = joblib.load(CWD + "/../Model/encoder.xz")
+MODEL = tf.keras.models.load_model("../Model/model_lstm_cens.keras")
+ENCODER = joblib.load("../Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
 

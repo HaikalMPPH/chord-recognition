@@ -12,17 +12,14 @@ import io
 import base64
 import tensorflow as tf
 
-CWD = os.getcwd()
-#MODEL = tf.keras.models.load_model("/mount/src/Rechordnizer/Model/model_lstm.keras")
-MODEL = tf.keras.models.load_model(CWD + "/../Model/model_lstm.keras")
-#ENCODER = joblib.load("/mount/src/Rechordnizer/Model/encoder.xz")
-ENCODER = joblib.load(CWD + "/mount/src/Rechordnizer/Model/encoder.xz")
+MODEL = tf.keras.models.load_model("./Model/model_lstm_cens.keras")
+ENCODER = joblib.load("./Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
-SEQ_LEN = 20 # 20 * 0.1 sec (2 sec)
+SEQ_LEN = 20 # 20 * 0.1 seconds
 
 if __name__ == "__main__":
   st.title("Rechordnizer")
-  uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav"])
+  uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
 
   if uploaded_file is not None:
     #st.subheader("Transcribed chords")
@@ -37,93 +34,67 @@ if __name__ == "__main__":
       hop_length = int(SEGMENT_DURATION_SEC * sr)
       file_duration = librosa.get_duration(y=y, sr=sr)
 
-      # CQT
-      y_harm = librosa.effects.harmonic(y=y, margin=8)
-      chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
-      chroma_filter = np.minimum(
-        chroma_harm,
-        librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
-      )
-      chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
-      chroma = chroma_smooth
+      # CENS
+      chroma_cens = librosa.feature.chroma_cens(y=y, sr=sr, hop_length=hop_length)
 
-      features = []
-      for idx in range(0, chroma.shape[1]):
-        features.append(np.hstack((chroma[:, idx])))
+      features = [np.hstack(chroma_cens[:, idx]) for idx in range(chroma_cens.shape[1])]
       features = np.array(features)
 
-      print(features.shape)
-      num_segment = features.shape[0]
+      # Insert SEQ_LEN-1 zero vectors at the beginning
+      zero_padding = np.zeros((SEQ_LEN - 1, features.shape[1]))
+      features = np.vstack((zero_padding, features))
+
+      num_segment = features.shape[0] - (SEQ_LEN - 1)
       start_time = np.arange(0, num_segment) * SEGMENT_DURATION_SEC
       end_time = np.minimum(start_time + SEGMENT_DURATION_SEC, file_duration)
-      # :::::::::::::::::::::::::::::::::::
 
-      # making sequence for LSTM
-      num_of_possible_sequence = len(features) - SEQ_LEN + 1
-      features_seq = []
-      for i in range(num_of_possible_sequence):
-        features_seq.append(features[i : i + SEQ_LEN, :])
+      # Creating LSTM input sequences
+      features_seq = [features[i:i + SEQ_LEN] for i in range(num_segment)]
       features_seq = np.array(features_seq)
 
       # Predict chords
       prediction = ENCODER.inverse_transform(
         np.argmax(MODEL.predict(features_seq), axis=1)
       )
-      
-      # Fix overlapping
-      frame_prediction = [None] * chroma.shape[1]
-      for i in range(num_of_possible_sequence):
-        frame_index_for_prediction = i + SEQ_LEN - 1
-        frame_prediction[frame_index_for_prediction] = prediction[i]
 
-      first_predicted_frame_idx = SEQ_LEN - 1
-      initial_chord_prediction = frame_prediction[first_predicted_frame_idx]
-
-      for i in range(first_predicted_frame_idx):
-        frame_prediction[i] = initial_chord_prediction
-
-      last_known_prediction = frame_prediction[0]
-      for i in range(1, chroma.shape[1]):
-        if frame_prediction is not None:
-          last_known_prediction = frame_prediction[i]
-        else:
-          frame_prediction[i] = last_known_prediction
+      # Smooth prediction with 1-sec window
+      window_size = 10
+      smoothed_prediction = []
+      for i in range(len(prediction)):
+        start = max(0, i - window_size // 2)
+        end = min(len(prediction), i + window_size // 2 + 1)
+        window = prediction[start:end]
+        chord_count = pd.Series(window).value_counts()
+        smoothed_prediction.append(chord_count.idxmax())
 
       prediction_df = pd.DataFrame({
         "start": start_time,
         "end": end_time,
-        "chord": frame_prediction,
+        "chord": smoothed_prediction,
       })
 
-      # :::::::: Merging repeating chords ::::::::
+      # Merge repeating chords
       merged_prediction = []
       current_start = prediction_df.iloc[0]["start"]
       current_end = prediction_df.iloc[0]["end"]
       current_chord = prediction_df.iloc[0]["chord"]
-      for index, rows in prediction_df.iloc[1:].iterrows():
-        start = rows["start"]
-        end = rows["end"]
-        chord = rows["chord"]
-
-        if current_chord == chord and np.isclose(current_end, start, atol=1e-6):
-          current_end = end
-        # append the merged chord and reset the current value for the new ones.
+      for _, row in prediction_df.iloc[1:].iterrows():
+        if current_chord == row["chord"] and np.isclose(current_end, row["start"], atol=1e-6):
+          current_end = row["end"]
         else:
           merged_prediction.append({
             "start": current_start,
             "end": current_end,
-            "chord": current_chord,
+            "chord": current_chord
           })
-          current_start = start
-          current_end = end
-          current_chord = chord
+          current_start = row["start"]
+          current_end = row["end"]
+          current_chord = row["chord"]
 
-      # if the last chord
-      #if current_chord is not None:
       merged_prediction.append({
         "start": current_start,
         "end": current_end,
-        "chord": current_chord,
+        "chord": current_chord
       })
 
       final_prediction_df = pd.DataFrame(merged_prediction)
