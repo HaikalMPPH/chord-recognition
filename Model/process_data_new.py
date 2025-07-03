@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # Extracting Audio Features
     for y_aug, labels_aug in augmented_y_and_labels:
       # CQT
-      y_harm = librosa.effects.harmonic(y=y_aug, margin=8)
+      #y_harm = librosa.effects.harmonic(y=y_aug, margin=8)
       #chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
       #chroma_filter = np.minimum(
       #  chroma_harm,
@@ -91,8 +91,7 @@ if __name__ == "__main__":
       #chroma = chroma_smooth
 
       # CENS
-      #chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
-      chroma_cens = librosa.feature.chroma_cens(y=y_harm, sr=sr, hop_length=hop_length)
+      chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
       
 
       # Extracting the chroma from a given timestamps

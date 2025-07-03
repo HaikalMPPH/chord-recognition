@@ -21,7 +21,7 @@ SEQ_LEN = 20 # 20 * 0.1 seconds
 
 if __name__ == "__main__":
   st.title("Rechordnizer")
-  uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
+  uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav"])
 
   if uploaded_file is not None:
     #st.subheader("Transcribed chords")
@@ -84,20 +84,12 @@ if __name__ == "__main__":
         if current_chord == row["chord"] and np.isclose(current_end, row["start"], atol=1e-6):
           current_end = row["end"]
         else:
-          merged_prediction.append({
-            "start": current_start,
-            "end": current_end,
-            "chord": current_chord
-          })
+          merged_prediction.append({"start": current_start, "end": current_end, "chord": current_chord})
           current_start = row["start"]
           current_end = row["end"]
           current_chord = row["chord"]
 
-      merged_prediction.append({
-        "start": current_start,
-        "end": current_end,
-        "chord": current_chord
-      })
+      merged_prediction.append({"start": current_start, "end": current_end, "chord": current_chord})
 
       final_prediction_df = pd.DataFrame(merged_prediction)
       # ::::::::::::::::::::::::::::::::::::::::::
