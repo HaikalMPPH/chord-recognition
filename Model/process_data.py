@@ -1,4 +1,4 @@
-#!../Venv/bin/python3
+#!../Venv/bin/python
 
 import os
 import glob
@@ -11,12 +11,9 @@ import numpy as np
 import pandas as pd
 import scipy.ndimage
 
-#OUTPUT_FILE = 'dataset.csv'
 OUTPUT_FILE = 'dataset.h5'
 ROOT_DIR = '../Datasets'
-CQT_COL = ['Cqt_C', 'Cqt_Db', 'Cqt_D', 'Cqt_Eb', 'Cqt_E', 'Cqt_F', 'Cqt_Gb', 'Cqt_G', 'Cqt_Ab', 'Cqt_A', 'Cqt_Bb', 'Cqt_B']
 CENS_COL = ['Cens_C', 'Cens_Db', 'Cens_D', 'Cens_Eb', 'Cens_E', 'Cens_F', 'Cens_Gb', 'Cens_G', 'Cens_Ab', 'Cens_A', 'Cens_Bb', 'Cens_B']
-#TONNETZ_COL = ['Tonnetz_5th_X', 'Tonnetz_5th_Y', 'Tonnetz_Min_X', 'Tonnetz_Min_Y', 'Tonnetz_Maj_X', 'Tonnetz_Maj_Y']
 SEGMENT_DURATION_SEC = 0.1 # 100 ms split
 
 if __name__ == "__main__":
@@ -56,98 +53,29 @@ if __name__ == "__main__":
     y, sr = librosa.load(in_file)
     hop_length = int(SEGMENT_DURATION_SEC * sr)
      
-    # :::::::: Data augmentation :::::::::
-    augmented_y_and_labels = []
-    pitches = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-    # Function for changeing the root after shifting
-    def get_new_chord(label, shift):
-      match = re.match(r"([A-G]b?)(.*)", label)
-      root = match.group(1)
-      suffix = match.group(2)
-      root_idx = pitches.index(root)
-      new_root_idx = (root_idx + shift) % 12
-      return f"{pitches[new_root_idx]}{suffix}"
+    # CENS
+    chroma_cens = librosa.feature.chroma_cens(y=y, sr=sr, hop_length=hop_length)
 
-    # Pitch shift
-    for i in range(-12, 13): # 12 semitones above and below
-      label_aug_1 = df_label.copy()
-      y_aug_1 = librosa.effects.pitch_shift(y=y, sr=sr, n_steps=i)
-      label_aug_1["chord"] = label_aug_1["chord"].apply(lambda x: get_new_chord(x, i))
-      #augmented_y_and_labels.append((y_aug_1, label_aug_1))
+    # Extracting the chroma from a given timestamps
+    chroma_fps = sr / hop_length
+    feature_list = []
+    label_list = []
+    for idx, start_lbl, end_lbl, chord_lbl in labels_aug.itertuples():
+      # start & end index
+      segment_start_idx = int(np.round(start_lbl * chroma_fps))
+      segment_end_idx = int(np.round(end_lbl * chroma_fps))
 
-      # Noise
-      noise_levels = [0.0, 0.001, 0.025, 0.05]
-      for level in noise_levels:
-        y_aug_2 = y_aug_1.copy() + (np.random.normal(0, level, y.shape[0]))
-        label_aug_2 = label_aug_1.copy()
-        #augmented_y_and_labels.append((y_aug_2, label_aug_2))
+      # bounds check the index
+      segment_start_idx = max(0, segment_start_idx)
+      segment_end_idx = min(chroma.shape[1], segment_end_idx)
 
-        # Add loudness
-        loud_levels = [1.0, 0.7, 1.3]
-        for level in loud_levels:
-          y_aug_3 = np.clip(y_aug_2.copy() * level, -1.0, 1.0)
-          label_aug_3 = label_aug_2.copy()
-          augmented_y_and_labels.append((y_aug_3, label_aug_3))
-
-          del y_aug_3
-          del label_aug_3
-          gc.collect()
-
-        del y_aug_2
-        del label_aug_2
-        gc.collect()
-
-      del y_aug_1
-      del label_aug_1
-      gc.collect()
-
-    del y
-    del df_label
-    gc.collect()
-
-    # Extracting Audio Features
-    for y_aug, labels_aug in augmented_y_and_labels:
-      # CQT
-      y_harm = librosa.effects.harmonic(y=y_aug, margin=8)
-      chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
-      chroma_filter = np.minimum(
-        chroma_harm,
-        librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
-      )
-      chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
-      chroma = chroma_smooth
-
-      # CENS
-      chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
-
-      # Tonnetz
-      #tonnetz = librosa.feature.tonnetz(y=y_harm, sr=sr, hop_length=hop_length)
-      
-
-      # Extracting the chroma from a given timestamps
-      chroma_fps = sr / hop_length
-      feature_list = []
-      label_list = []
-      for idx, start_lbl, end_lbl, chord_lbl in labels_aug.itertuples():
-        # start & end index
-        segment_start_idx = int(np.round(start_lbl * chroma_fps))
-        segment_end_idx = int(np.round(end_lbl * chroma_fps))
-
-        # bounds check the index
-        segment_start_idx = max(0, segment_start_idx)
-        segment_end_idx = min(chroma.shape[1], segment_end_idx)
-
-        for idx in range(segment_start_idx, segment_end_idx):
-          #tonnetz_row = tonnetz[:, idx]
-          #segment = np.hstack((chroma[:, idx], chroma_cens[:, idx], tonnetz[:, idx]))
-          segment = np.hstack((chroma[:, idx], chroma_cens[:, idx]))
-          feature_list.append(segment)
-          label_list.append(chord_lbl)
+      for idx in range(segment_start_idx, segment_end_idx):
+        segment = chroma_cens[:, idx]
+        feature_list.append(segment)
+        label_list.append(chord_lbl)
 
       # Current file features
-      #df_feature = pd.DataFrame(feature_list, columns=PITCH_CLASS_LABELS)
-      #df_feature = pd.DataFrame(feature_list, columns=CQT_COL + CENS_COL + TONNETZ_COL).astype(np.float32)
-      df_feature = pd.DataFrame(feature_list, columns=CQT_COL + CENS_COL).astype(np.float32)
+      df_feature = pd.DataFrame(feature_list, columns=CENS_COL).astype(np.float32)
       df_feature["chord"] = label_list
       
       if not df_feature.empty:
@@ -156,15 +84,9 @@ if __name__ == "__main__":
       else:
         print("ERROR")
       
-      del y_aug
-      del labels_aug
       del df_feature
       del feature_list
       del label_list
-      del chroma
-      del chroma_harm
-      del chroma_smooth
-      del chroma_filter
       del chroma_cens
       gc.collect()
     print("DONE")
@@ -172,25 +94,11 @@ if __name__ == "__main__":
   del augmented_y_and_labels
   gc.collect()
 
-  #df_dataset = pd.concat(dataset, axis=0).drop_duplicates()
   df_dataset = pd.concat(dataset, axis=0)
   del dataset
   gc.collect()
-
-  # normalizing tonnetz & save min & max value
-  #tonnetz_min = df_dataset[TONNETZ_COL].min()
-  #tonnetz_max = df_dataset[TONNETZ_COL].max()
-  #np.savez("./tonnetz_min_max.npz", min=tonnetz_min, max=tonnetz_max)
-  #df_dataset[TONNETZ_COL] = (df_dataset[TONNETZ_COL] - tonnetz_min) / (tonnetz_max - tonnetz_min + 1e-6)
-  #df_dataset[TONNETZ_COL] = df_dataset[TONNETZ_COL].clip(0.0, 1.0)
-
-  # TODO: replace this and actually split the train and test data here and save it as .npy
-  #X_seq = []
-  #y_
-  #df_dataset.to_csv(out_files, header=True, index=None, float_format="%.6f")
   df_dataset.to_hdf(out_files, key="df", mode="w", complib="zlib", complevel=9)
 
-  print(f"[INFO]: Output dataset -> {out_files}")
   print(f"[INFO]: Total segments -> {len(df_dataset)}")
   print(f"[INFO]: Total chords   -> {len(df_dataset['chord'].unique())}")
   print(f"[INFO]: Chords labels {df_dataset['chord'].unique()}")

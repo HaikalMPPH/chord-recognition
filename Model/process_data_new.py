@@ -80,19 +80,11 @@ if __name__ == "__main__":
     
     # Extracting Audio Features
     for y_aug, labels_aug in augmented_y_and_labels:
-      # CQT
-      #y_harm = librosa.effects.harmonic(y=y_aug, margin=8)
-      #chroma_harm = librosa.feature.chroma_cqt(y=y_harm, sr=sr, hop_length=hop_length)
-      #chroma_filter = np.minimum(
-      #  chroma_harm,
-      #  librosa.decompose.nn_filter(chroma_harm, aggregate=np.median)
-      #)
-      #chroma_smooth = scipy.ndimage.median_filter(chroma_filter, size=(1, 9))
-      #chroma = chroma_smooth
+      y_harm = librosa.effects.harmonic(y=y_aug)
 
       # CENS
-      chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
-      
+      #chroma_cens = librosa.feature.chroma_cens(y=y_aug, sr=sr, hop_length=hop_length)
+      chroma_cens = librosa.feature.chroma_cens(y=y_harm, sr=sr, hop_length=hop_length)
 
       # Extracting the chroma from a given timestamps
       chroma_fps = sr / hop_length
@@ -105,19 +97,14 @@ if __name__ == "__main__":
 
         # bounds check the index
         segment_start_idx = max(0, segment_start_idx)
-        #segment_end_idx = min(chroma.shape[1], segment_end_idx)
         segment_end_idx = min(chroma_cens.shape[1], segment_end_idx)
 
         for idx in range(segment_start_idx, segment_end_idx):
-          #segment = np.hstack((chroma[:, idx], chroma_cens[:, idx]))
-          #segment = chroma[:, idx]
           segment = chroma_cens[:, idx]
           feature_list.append(segment)
           label_list.append(chord_lbl)
 
       # Current file features
-      #df_feature = pd.DataFrame(feature_list, columns=CQT_COL + CENS_COL).astype(np.float32)
-      #df_feature = pd.DataFrame(feature_list, columns=CQT_COL).astype(np.float32)
       df_feature = pd.DataFrame(feature_list, columns=CENS_COL).astype(np.float32)
       df_feature["chord"] = label_list
       

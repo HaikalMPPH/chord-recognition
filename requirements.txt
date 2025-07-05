@@ -1,8 +1,9 @@
 streamlit
 scikit-learn
-tensorflow==2.19.0
+tensorflow
 joblib
 librosa
 numpy
 pandas
 scipy
+yt_dlp
