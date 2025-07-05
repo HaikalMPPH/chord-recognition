@@ -30,33 +30,34 @@ if __name__ == "__main__":
   uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
   yt_url = st.text_input("Or youtube URL")
 
+  audio_path = None
   audio_librosa_input = None
   audio_bytes = None
   if yt_url:
     st.session_state.yt_url = yt_url
     with st.spinner("Downloading audio..."):
-      #audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
-      audio_path = "./tmp.mp3"
-      yt_dlp_flags = {
-          "format": "bestaudio/best",
-          "quiet": True,
-          "noplaylist": True,
-          #"outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
-          "outtmpl": "./tmp.mp3",
-          "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "mp3",
-            "preferredquality": "192",
-          }]
-      }
-      
-      with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
-        ytdl.download([yt_url])
-      
-      audio_librosa_input = audio_path
+      with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+          yt_dlp_flags = {
+              "format": "bestaudio/best",
+              "quiet": True,
+              "noplaylist": True,
+              #"outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
+              "outtmpl": tmp.name,
+              "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+              }]
+          }
+          
+          with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
+            ytdl.download([yt_url])
+          
+          audio_librosa_input = tmp.name
+          audio_path = tmp.name
 
-      with open(audio_path, "rb") as f:
-        audio_bytes = f.read()
+          with open(audio_path, "rb") as f:
+            audio_bytes = f.read()
 
   elif uploaded_file is not None:
     st.session_state.uploaded_file = None
@@ -69,6 +70,8 @@ if __name__ == "__main__":
   with st.spinner("Processing audio..."):
     # :::::::: Featurizing files ::::::::
     y, sr = librosa.load(audio_librosa_input)
+    if audio_path:
+      os.remove(audio_path)
     hop_length = int(SEGMENT_DURATION_SEC * sr)
     file_duration = librosa.get_duration(y=y, sr=sr)
 
