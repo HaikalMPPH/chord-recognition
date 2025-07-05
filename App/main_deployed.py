@@ -11,6 +11,8 @@ import json
 import io
 import base64
 import tensorflow as tf
+import tempfile
+import yt_dlp
 
 MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32.keras")
 ENCODER = joblib.load("/mount/src/rechordnizer/Model/encoder.xz")
