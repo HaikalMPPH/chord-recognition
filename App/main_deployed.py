@@ -39,13 +39,13 @@ if __name__ == "__main__":
       with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
           yt_dlp_flags = {
               "format": "bestaudio/best",
-              "quiet": True,
+              "quiet": False,
               "noplaylist": True,
               #"outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
               "outtmpl": tmp.name,
               "postprocessors": [{
                 "key": "FFmpegExtractAudio",
-                "preferredcodec": "m4a",
+                "preferredcodec": "wav",
                 "preferredquality": "192",
               }]
           }
