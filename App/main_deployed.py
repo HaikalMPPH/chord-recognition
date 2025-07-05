@@ -45,7 +45,7 @@ if __name__ == "__main__":
               "outtmpl": tmp.name,
               "postprocessors": [{
                 "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
+                "preferredcodec": "m4a",
                 "preferredquality": "192",
               }]
           }
