@@ -14,6 +14,8 @@ import tensorflow as tf
 import tempfile
 import yt_dlp
 
+CWD = os.getcwd()
+
 MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32.keras")
 ENCODER = joblib.load("/mount/src/rechordnizer/Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1

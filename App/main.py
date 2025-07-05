@@ -14,8 +14,16 @@ import tensorflow as tf
 import tempfile
 import yt_dlp
 
-MODEL = tf.keras.models.load_model("../Model/model_lstm_cens_32_32.keras")
-ENCODER = joblib.load("../Model/encoder.xz")
+
+MODEL = None
+ENCODER = None
+CWD = os.getcwd()
+if "/mount/src" in CWD:
+  MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32.keras")
+  ENCODER = joblib.load("/mount/src/rechordnizer/Model/encoder.xz")
+else:
+  MODEL = tf.keras.models.load_model("../Model/model_lstm_cens_32_32.keras")
+  ENCODER = joblib.load("../Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
 
