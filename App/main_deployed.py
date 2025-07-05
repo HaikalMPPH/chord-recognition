@@ -12,7 +12,7 @@ import io
 import base64
 import tensorflow as tf
 
-MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens.keras")
+MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32.keras")
 ENCODER = joblib.load("/mount/src/rechordnizer/Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
