@@ -35,12 +35,14 @@ if __name__ == "__main__":
   if yt_url:
     st.session_state.yt_url = yt_url
     with st.spinner("Downloading audio..."):
-      audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
+      #audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
+      audio_path = "./tmp.mp3"
       yt_dlp_flags = {
           "format": "bestaudio/best",
           "quiet": True,
           "noplaylist": True,
-          "outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
+          #"outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
+          "outtmpl": "./tmp.mp3",
           "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "mp3",

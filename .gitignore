@@ -8,3 +8,5 @@ Model/*.h5
 Datasets/*.mp3
 Datasets/misc/
 Datasets/exclue/
+
+App/tmp.mp3
