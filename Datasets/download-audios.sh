@@ -26,6 +26,12 @@ yt-dlp -x "https://www.youtube.com/watch?v=1IXKoGyrOJI" --audio-format mp3 -o 28
 yt-dlp -x "https://www.youtube.com/shorts/A7O_xkHGDGc" --audio-format mp3 -o 29.mp3
 #yt-dlp -x ""
 
+# skip to 32
+yt-dlp -x "https://www.youtube.com/watch?v=aqhPZ5N-jG0" --audio-format mp3 -o 32.mp3
+yt-dlp -x "https://www.youtube.com/watch?v=6bcRqt3_h20" --audio-format mp3 -o 33.mp3
+yt-dlp -x "https://www.youtube.com/watch?v=tkzY_VwNIek" --audio-format mp3 -o 34.mp3
+yt-dlp -x "https://youtu.be/35XNPXS3QYs" --audio-format mp3 -o 35.mp3
+
 # special care
 #yt-dlp -x "https://www.youtube.com/shorts/U4VjlWwNXwQ" --audio-format mp3 -o 11.mp3
 #yt-dlp -x "https://www.youtube.com/shorts/fnPWm_Jb1Dg" --audio-format mp3 -o 12.mp3

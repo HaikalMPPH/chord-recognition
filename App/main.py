@@ -19,10 +19,10 @@ MODEL = None
 ENCODER = None
 CWD = os.getcwd()
 if "/mount/src" in CWD:
-  MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32.keras")
+  MODEL = tf.keras.models.load_model("/mount/src/rechordnizer/Model/model_lstm_cens_32_32_new.keras")
   ENCODER = joblib.load("/mount/src/rechordnizer/Model/encoder.xz")
 else:
-  MODEL = tf.keras.models.load_model("../Model/model_lstm_cens_32_32.keras")
+  MODEL = tf.keras.models.load_model("../Model/model_lstm_cens_64_64.keras")
   ENCODER = joblib.load("../Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
@@ -103,20 +103,20 @@ if __name__ == "__main__":
     )
 
     # Smooth prediction with 1-sec window
-    window_size = 5
-    smoothed_prediction = []
-    for i in range(len(prediction)):
-      start = max(0, i - window_size // 2)
-      end = min(len(prediction), i + window_size // 2 + 1)
-      window = prediction[start:end]
-      chord_count = pd.Series(window).value_counts()
-      smoothed_prediction.append(chord_count.idxmax())
+    #window_size = 10
+    #smoothed_prediction = []
+    #for i in range(len(prediction)):
+    #  start = max(0, i - window_size // 2)
+    #  end = min(len(prediction), i + window_size // 2 + 1)
+    #  window = prediction[start:end]
+    #  chord_count = pd.Series(window).value_counts()
+    #  smoothed_prediction.append(chord_count.idxmax())
 
     prediction_df = pd.DataFrame({
       "start": start_time,
       "end": end_time,
-      "chord": smoothed_prediction,
-      #"chord": prediction,
+      #"chord": smoothed_prediction,
+      "chord": prediction,
     })
 
     # Merge repeating chords
