@@ -165,7 +165,7 @@ def page_chord(
 
         st.stop()
 
-    st.title("Chord")
+    st.title("Processed Chords")
     page = f"""
         <style>
             #chord_display {{
