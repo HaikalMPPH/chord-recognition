@@ -1,5 +1,3 @@
-#!../venv/bin/python
-
 import streamlit as st
 import joblib
 import pandas as pd
@@ -25,42 +23,51 @@ ENCODER = joblib.load(ROOT + "encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
 
-# Initialize session state
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
-if "youtube_url" not in st.session_state:
-    st.session_state.youtube_url = ""
+# Default state
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+if "page_chord_param" not in st.session_state:
+    st.session_state.page_chord_param = {
+        "msg": "This should not happen...",
+        "audio_base64": None,
+        "feature_json": None
+    }
 
-if __name__ == "__main__":
+def page_home():
     st.title("Rechordnizer")
     uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
     yt_url = st.text_input("Or youtube URL")
-
+    
     audio_librosa_input = None
     audio_bytes = None
     if yt_url:
-        st.session_state.yt_url = yt_url
-        with st.spinner("Downloading audio..."):
-            audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
-            yt_dlp_flags = {
-                    "format": "bestaudio/best",
-                    "quiet": True,
-                    "noplaylist": True,
-                    "outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
-                    "postprocessors": [{
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "mp3",
-                        "preferredquality": "192",
-                    }]
-            }
-            
-            with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
-                ytdl.download([yt_url])
-            
-            audio_librosa_input = audio_path
+        try:
+            st.session_state.yt_url = yt_url
+            with st.spinner("Downloading audio..."):
+                audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
+                yt_dlp_flags = {
+                        "format": "bestaudio/best",
+                        "quiet": False,
+                        "noplaylist": True,
+                        "outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
+                        "postprocessors": [{
+                            "key": "FFmpegExtractAudio",
+                            "preferredcodec": "mp3",
+                            "preferredquality": "192",
+                        }]
+                }
+                
+                with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
+                    ytdl.download([yt_url])
+                
+                audio_librosa_input = audio_path
 
-            with open(audio_path, "rb") as f:
-                audio_bytes = f.read()
+                with open(audio_path, "rb") as f:
+                    audio_bytes = f.read()
+        except Exception as e:
+            st.session_state.page = "chord"
+            st.session_state.page_chord_param["msg"] = f"Error: {str(e).replace('␛[0;31mERROR:␛[0m ', '')}"
+            st.rerun()
 
     elif uploaded_file is not None:
         st.session_state.uploaded_file = None
@@ -99,21 +106,9 @@ if __name__ == "__main__":
         prediction = ENCODER.inverse_transform(
             np.argmax(MODEL.predict(features_seq), axis=1)
         )
-
-        # Smooth prediction with 1-sec window
-        #window_size = 10
-        #smoothed_prediction = []
-        #for i in range(len(prediction)):
-        #    start = max(0, i - window_size // 2)
-        #    end = min(len(prediction), i + window_size // 2 + 1)
-        #    window = prediction[start:end]
-        #    chord_count = pd.Series(window).value_counts()
-        #    smoothed_prediction.append(chord_count.idxmax())
-
         prediction_df = pd.DataFrame({
             "start": start_time,
             "end": end_time,
-            #"chord": smoothed_prediction,
             "chord": prediction,
         })
 
@@ -144,11 +139,33 @@ if __name__ == "__main__":
         final_prediction_df = pd.DataFrame(merged_prediction)
         # ::::::::::::::::::::::::::::::::::::::::::
 
-    # :::::::: Displaying custom HTML for audio ::::::::
-    feature_df_json = json.dumps(
+    feature_json = json.dumps(
         final_prediction_df[["start", "end", "chord"]].to_dict(orient="records")
     )
     audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+    
+    st.session_state.page = "chord"
+    st.session_state.page_chord_param["msg"] = None
+    st.session_state.page_chord_param["audio_base64"] = audio_base64
+    st.session_state.page_chord_param["feature_json"] = feature_json
+    st.rerun()
+
+def page_chord(
+    msg = st.session_state.page_chord_param["msg"],
+    audio_base64 = st.session_state.page_chord_param["audio_base64"],
+    feature_json = st.session_state.page_chord_param["feature_json"],
+):
+    if msg:
+        st.title("Error occured:")
+        st.write(msg)
+
+        if st.button("Return"):
+            st.session_state.page = "home"
+            st.rerun()
+
+        st.stop()
+
+    st.title("Chord")
     page = f"""
         <style>
             #chord_display {{
@@ -171,7 +188,7 @@ if __name__ == "__main__":
         <script>
             let chord_display = document.getElementById("chord_display");
             let audio_player = document.getElementById("audio_player");
-            let feature_json = {feature_df_json};
+            let feature_json = {feature_json};
 
             // avoid constant DOM update
             let last_chord = null;
@@ -198,10 +215,12 @@ if __name__ == "__main__":
         </script>
     """
 
-    # display html
-    #st.html(page)
     st.components.v1.html(page)
-    st.session_state.yt_url = ""
-    st.session_state.uploaded_file = None
-    # ::::::::::::::::::::::::::::::::::::::::::::::::::
 
+
+if __name__ == "__main__":
+    match st.session_state.page:
+        case "chord":
+            page_chord()
+        case "home":
+            page_home()
