@@ -23,6 +23,11 @@ ENCODER = joblib.load(ROOT + "encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
 
+# Default Config
+st.set_page_config(
+   layout="centered",
+   page_title="Rechordnizer🎵🎶",
+)
 # Default state
 if "page" not in st.session_state:
    st.session_state.page = "home"
@@ -34,9 +39,13 @@ if "page_chord_param" not in st.session_state:
    }
 
 def page_home():
-   st.title("Rechordnizer")
+   st.title("Rechordnizer🎵🎶")
+   st.write("Automatically detect chords from audio recordings via file uploads or URLs such as YouTube, Instagram, SoundCloud, or any site containing audio or video you're interested in!")
    uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
-   yt_url = st.text_input("Or youtube URL")
+   yt_url = st.text_input("Or Supported Media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
+   st.subheader("NOTE")
+   st.markdown("- Rechordnizer only can classify **minor 7**, **major 7**, and **dominant 7** chords!")
+   st.markdown("- Major and minor triads are classified as major 7 and minor 7 chords")
    
    audio_librosa_input = None
    audio_bytes = None
@@ -46,15 +55,15 @@ def page_home():
          with st.spinner("Downloading audio..."):
             audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
             yt_dlp_flags = {
-                  "format": "bestaudio/best",
-                  "quiet": False,
-                  "noplaylist": True,
-                  "outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
-                  "postprocessors": [{
-                     "key": "FFmpegExtractAudio",
-                     "preferredcodec": "mp3",
-                     "preferredquality": "192",
-                  }]
+               "format": "bestaudio/best",
+               "quiet": False,
+               "noplaylist": True,
+               "outtmpl": os.path.join(tempfile.gettempdir(), "audio.%(ext)s"),
+               "postprocessors": [{
+                  "key": "FFmpegExtractAudio",
+                  "preferredcodec": "mp3",
+                  "preferredquality": "192",
+               }]
             }
             
             with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
@@ -66,7 +75,7 @@ def page_home():
                audio_bytes = f.read()
       except Exception as e:
          st.session_state.page = "chord"
-         st.session_state.page_chord_param["msg"] = f"Error: {str(e).replace('␛[0;31mERROR:␛[0m ', '')}"
+         st.session_state.page_chord_param["msg"] = f"Error: {e}"
          st.rerun()
 
    elif uploaded_file is not None:
