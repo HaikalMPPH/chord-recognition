@@ -3,7 +3,6 @@ import joblib
 import pandas as pd
 import librosa
 import numpy as np
-import scipy
 import os
 import json
 import io
@@ -31,8 +30,8 @@ st.set_page_config(
 # Default state
 if "page" not in st.session_state:
    st.session_state.page = "home"
-if "page_chord_param" not in st.session_state:
-   st.session_state.page_chord_param = {
+if "page_chord_vars" not in st.session_state:
+   st.session_state.page_chord_vars = {
       "msg": "This should not happen...",
       "audio_base64": None,
       "feature_json": None
@@ -75,11 +74,11 @@ def page_home():
                audio_bytes = f.read()
       except Exception as e:
          st.session_state.page = "chord"
-         st.session_state.page_chord_param["msg"] = f"Error: {e}"
+         st.session_state.page_chord_vars["msg"] = f"Error: {e}"
          st.rerun()
 
    elif uploaded_file is not None:
-      st.session_state.uploaded_file = None
+   st.session_state.uploaded_file = None
 
       audio_bytes = uploaded_file.read()
       audio_librosa_input = io.BytesIO(audio_bytes)
@@ -154,16 +153,13 @@ def page_home():
    audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
    
    st.session_state.page = "chord"
-   st.session_state.page_chord_param["msg"] = None
-   st.session_state.page_chord_param["audio_base64"] = audio_base64
-   st.session_state.page_chord_param["feature_json"] = feature_json
+   st.session_state.page_chord_vars["msg"] = None
+   st.session_state.page_chord_vars["audio_base64"] = audio_base64
+   st.session_state.page_chord_vars["feature_json"] = feature_json
    st.rerun()
 
-def page_chord(
-   msg = st.session_state.page_chord_param["msg"],
-   audio_base64 = st.session_state.page_chord_param["audio_base64"],
-   feature_json = st.session_state.page_chord_param["feature_json"],
-):
+def page_chord():
+   msg = st.session_state.page_chord_vars["msg"]
    if msg:
       st.title("Error occured:")
       st.write(msg)
@@ -175,6 +171,8 @@ def page_chord(
       st.stop()
 
    st.title("Processed Chords")
+   audio_base64 = st.session_state.page_chord_vars["audio_base64"]
+   feature_json = st.session_state.page_chord_vars["feature_json"]
    page = f"""
       <style>
          #chord_display {{
