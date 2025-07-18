@@ -39,18 +39,25 @@ if "page_chord_vars" not in st.session_state:
 
 def page_home():
    st.title("Rechordnizer🎵🎶")
-   st.write("Automatically detect chords from audio recordings via file uploads or URLs such as YouTube, Instagram, SoundCloud, or any site containing audio or video you're interested in!")
-   uploaded_file = st.file_uploader("Upload audio file", type=["mp3", "wav", "ogg", "opus", "flac", "avi"])
-   yt_url = st.text_input("Or Supported Media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
+   st.write(
+      "Automatically detect chords from audio recordings via file uploads or URLs "
+      + "such as YouTube, Instagram, SoundCloud, or any site containing audio or video "
+      + "you're interested in!"
+   )
    st.subheader("NOTE")
-   st.markdown("- Rechordnizer only can classify **minor 7**, **major 7**, and **dominant 7** chords!")
+   st.markdown("- Rechordnizer can only classify **minor 7**, **major 7**, and **dominant 7** chords!")
    st.markdown("- Major and minor triads are classified as major 7 and minor 7 chords")
    
+   uploaded_file = st.file_uploader(
+      "Upload audio file", 
+      type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
+   )
+   uploaded_url = st.text_input("Or supported media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
+
    audio_librosa_input = None
    audio_bytes = None
-   if yt_url:
+   if uploaded_url:
       try:
-         st.session_state.yt_url = yt_url
          with st.spinner("Downloading audio..."):
             audio_path = os.path.join(tempfile.gettempdir(), "audio.mp3")
             yt_dlp_flags = {
@@ -66,7 +73,7 @@ def page_home():
             }
             
             with yt_dlp.YoutubeDL(yt_dlp_flags) as ytdl:
-               ytdl.download([yt_url])
+               ytdl.download([uploaded_url])
             
             audio_librosa_input = audio_path
 
@@ -76,10 +83,7 @@ def page_home():
          st.session_state.page = "chord"
          st.session_state.page_chord_vars["msg"] = f"Error: {e}"
          st.rerun()
-
    elif uploaded_file is not None:
-   st.session_state.uploaded_file = None
-
       audio_bytes = uploaded_file.read()
       audio_librosa_input = io.BytesIO(audio_bytes)
    else:
@@ -98,7 +102,7 @@ def page_home():
       features = [np.hstack(chroma_cens[:, idx]) for idx in range(chroma_cens.shape[1])]
       features = np.array(features)
 
-      # Insert SEQ_LEN-1 zero vectors at the beginning
+      # Insert SEQ_LEN-1 zeros at the beginning
       zero_padding = np.zeros((SEQ_LEN - 1, features.shape[1]))
       features = np.vstack((zero_padding, features))
 
@@ -126,7 +130,7 @@ def page_home():
       current_end = prediction_df.iloc[0]["end"]
       current_chord = prediction_df.iloc[0]["chord"]
       for _, row in prediction_df.iloc[1:].iterrows():
-         if current_chord == row["chord"] and np.isclose(current_end, row["start"], atol=1e-6):
+         if current_chord == row["chord"]:
             current_end = row["end"]
          else:
             merged_prediction.append({
@@ -159,15 +163,16 @@ def page_home():
    st.rerun()
 
 def page_chord():
-   msg = st.session_state.page_chord_vars["msg"]
-   if msg:
-      st.title("Error occured:")
-      st.write(msg)
-
+   def btn_home():
       if st.button("Return to Home"):
          st.session_state.page = "home"
          st.rerun()
 
+   msg = st.session_state.page_chord_vars["msg"]
+   if msg:
+      st.title("Error occured:")
+      st.write(msg)
+      btn_home()
       st.stop()
 
    st.title("Processed Chords")
@@ -223,10 +228,7 @@ def page_chord():
    """
 
    st.components.v1.html(page)
-   if st.button("Return to Home"):
-      st.session_state.page = "home"
-      st.rerun()
-
+   btn_home()
 
 if __name__ == "__main__":
    match st.session_state.page:
