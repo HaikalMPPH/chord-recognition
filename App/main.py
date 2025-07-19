@@ -50,7 +50,7 @@ def page_home():
    
    uploaded_file = st.file_uploader(
       "Upload audio file", 
-      #type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
+      type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
    )
    uploaded_url = st.text_input("Or supported media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
 
