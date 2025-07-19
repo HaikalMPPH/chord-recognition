@@ -42,7 +42,7 @@ def page_home():
    st.write(
       "Automatically detect chords from audio recordings via file uploads or URLs "
       + "such as YouTube, Instagram, SoundCloud, or any site containing audio or video "
-      + "you're interested in!"
+      + "of your interest!"
    )
    st.subheader("NOTE")
    st.markdown("- Rechordnizer can only classify **minor 7**, **major 7**, and **dominant 7** chords!")
@@ -183,7 +183,7 @@ def page_chord():
       btn_home()
       st.stop()
 
-   st.title("Processed Chords")
+   st.title("Detected Chords")
    audio_base64 = st.session_state.page_chord_vars["audio_base64"]
    feature_json = st.session_state.page_chord_vars["feature_json"]
    page = f"""
