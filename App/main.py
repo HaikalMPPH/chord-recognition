@@ -50,12 +50,18 @@ def page_home():
    
    uploaded_file = st.file_uploader(
       "Upload audio file", 
-      type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
+      #type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
    )
    uploaded_url = st.text_input("Or supported media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
 
    audio_librosa_input = None
    audio_bytes = None
+
+   def give_error(e: Exception):
+      st.session_state.page = "chord"
+      st.session_state.page_chord_vars["msg"] = f"Error: {e}"
+      st.rerun()
+
    if uploaded_url:
       try:
          with st.spinner("Downloading audio..."):
@@ -80,9 +86,7 @@ def page_home():
             with open(audio_path, "rb") as f:
                audio_bytes = f.read()
       except Exception as e:
-         st.session_state.page = "chord"
-         st.session_state.page_chord_vars["msg"] = f"Error: {e}"
-         st.rerun()
+         give_error(e)
    elif uploaded_file is not None:
       audio_bytes = uploaded_file.read()
       audio_librosa_input = io.BytesIO(audio_bytes)
@@ -91,7 +95,11 @@ def page_home():
       
    with st.spinner("Processing audio..."):
       # :::::::: Featurizing files ::::::::
-      y, sr = librosa.load(audio_librosa_input)
+      try:
+         y, sr = librosa.load(audio_librosa_input)
+      except Exception as e:
+         give_error(e)
+
       hop_length = int(SEGMENT_DURATION_SEC * sr)
       file_duration = librosa.get_duration(y=y, sr=sr)
 
