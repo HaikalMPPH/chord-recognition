@@ -13,12 +13,13 @@ import yt_dlp
 
 ROOT = ""
 CWD = os.getcwd()
-if "/mount/src" in CWD:
-   ROOT = "/mount/src/rechordnizer/Model/"
-else:
-   ROOT = CWD + "/../Model/"
-MODEL = tf.keras.models.load_model(ROOT + "model_lstm_cens_64_64.keras")
-ENCODER = joblib.load(ROOT + "encoder.xz")
+#if "/mount/src" in CWD:
+#   ROOT = "/mount/src/rechordnizer/Model/"
+#else:
+#   ROOT = CWD + "/../Model/"
+#MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_64_64.keras")
+MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_128_128.keras")
+ENCODER = joblib.load(ROOT + "./Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
 
@@ -52,6 +53,9 @@ def page_home():
       "Upload audio file", 
       type=["mp3", "wav", "ogg", "opus", "flac", "avi"]
    )
+   _, c, _ = st.columns([2, 1, 1]) # hacky centering
+   with c:
+      st.subheader("or")
    uploaded_url = st.text_input("Or supported media URL (ex: https://youtu.be/dQw4w9WgXcQ)")
 
    audio_librosa_input = None
@@ -99,14 +103,12 @@ def page_home():
          y, sr = librosa.load(audio_librosa_input)
       except Exception as e:
          give_error(e)
-
       hop_length = int(SEGMENT_DURATION_SEC * sr)
       file_duration = librosa.get_duration(y=y, sr=sr)
 
-      # CENS
+      # extracting CENS
       y_harm = librosa.effects.harmonic(y=y)
       chroma_cens = librosa.feature.chroma_cens(y=y_harm, sr=sr, hop_length=hop_length)
-
       features = [np.hstack(chroma_cens[:, idx]) for idx in range(chroma_cens.shape[1])]
       features = np.array(features)
 
@@ -172,9 +174,11 @@ def page_home():
 
 def page_chord():
    def btn_home():
-      if st.button("Return to Home"):
-         st.session_state.page = "home"
-         st.rerun()
+      l, c, r = st.columns([2, 2, 1]) # hacky centering
+      with c:
+         if st.button("Return to Home"):
+            st.session_state.page = "home"
+            st.rerun()
 
    msg = st.session_state.page_chord_vars["msg"]
    if msg:
