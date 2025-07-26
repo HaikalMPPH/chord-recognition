@@ -13,12 +13,7 @@ import yt_dlp
 
 ROOT = ""
 CWD = os.getcwd()
-#if "/mount/src" in CWD:
-#   ROOT = "/mount/src/rechordnizer/Model/"
-#else:
-#   ROOT = CWD + "/../Model/"
-#MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_64_64.keras")
-MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_128_128.keras")
+MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_64_128.keras")
 ENCODER = joblib.load(ROOT + "./Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
