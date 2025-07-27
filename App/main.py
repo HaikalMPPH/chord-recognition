@@ -13,7 +13,7 @@ import yt_dlp
 
 ROOT = ""
 CWD = os.getcwd()
-MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_64_128.keras")
+MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_128_64.keras")
 ENCODER = joblib.load(ROOT + "./Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
 SEQ_LEN = 20 # 20 * 0.1 seconds
