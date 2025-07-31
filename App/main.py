@@ -13,10 +13,15 @@ import yt_dlp
 
 ROOT = ""
 CWD = os.getcwd()
-MODEL = tf.keras.models.load_model(ROOT + "./Model/model_lstm_128_64.keras")
+LAYER = 64
+SEQ_LEN = 10 # 20 * 0.1 seconds
+MODEL = tf.keras.models.load_model(
+    ROOT +
+    f"./Model/Models/model_lstm_{LAYER}_{LAYER}_seq_{SEQ_LEN}.keras"
+)
+#MODEL = joblib.load(ROOT + "./Model/model_lstm_64_64_seq_10.xz")
 ENCODER = joblib.load(ROOT + "./Model/encoder.xz")
 SEGMENT_DURATION_SEC = 0.1
-SEQ_LEN = 20 # 20 * 0.1 seconds
 
 # Default Config
 st.set_page_config(
@@ -117,11 +122,13 @@ def page_home():
 
       # Creating LSTM input sequences
       features_seq = [features[i:i + SEQ_LEN] for i in range(num_segment)]
+      #features_seq = [features[i:i + SEQ_LEN].flatten() for i in range(num_segment)]
       features_seq = np.array(features_seq)
 
       # Predict chords
       prediction = ENCODER.inverse_transform(
          np.argmax(MODEL.predict(features_seq), axis=1)
+         #MODEL.predict(features_seq)
       )
       prediction_df = pd.DataFrame({
          "start": start_time,

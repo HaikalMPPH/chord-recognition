@@ -13,7 +13,6 @@ import scipy.ndimage
 
 OUTPUT_FILE = 'dataset.h5'
 ROOT_DIR = '../Datasets'
-CQT_COL = ['Cqt_C', 'Cqt_Db', 'Cqt_D', 'Cqt_Eb', 'Cqt_E', 'Cqt_F', 'Cqt_Gb', 'Cqt_G', 'Cqt_Ab', 'Cqt_A', 'Cqt_Bb', 'Cqt_B']
 CENS_COL = ['Cens_C', 'Cens_Db', 'Cens_D', 'Cens_Eb', 'Cens_E', 'Cens_F', 'Cens_Gb', 'Cens_G', 'Cens_Ab', 'Cens_A', 'Cens_Bb', 'Cens_B']
 SEGMENT_DURATION_SEC = 0.1 # 100 ms split
 
@@ -107,6 +106,7 @@ if __name__ == "__main__":
       # Current file features
       df_feature = pd.DataFrame(feature_list, columns=CENS_COL).astype(np.float32)
       df_feature["chord"] = label_list
+      df_feature["filename"] = in_file
       
       if not df_feature.empty:
         dataset.append(df_feature)
@@ -134,13 +134,6 @@ if __name__ == "__main__":
   df_dataset = pd.concat(dataset, axis=0)
   del dataset
   gc.collect()
-
-  # normalizing tonnetz & save min & max value
-  #tonnetz_min = df_dataset[TONNETZ_COL].min()
-  #tonnetz_max = df_dataset[TONNETZ_COL].max()
-  #np.savez("./tonnetz_min_max.npz", min=tonnetz_min, max=tonnetz_max)
-  #df_dataset[TONNETZ_COL] = (df_dataset[TONNETZ_COL] - tonnetz_min) / (tonnetz_max - tonnetz_min + 1e-6)
-  #df_dataset[TONNETZ_COL] = df_dataset[TONNETZ_COL].clip(0.0, 1.0)
 
   # TODO: replace this and actually split the train and test data here and save it as .npy
   #df_dataset.to_csv(out_files, header=True, index=None, float_format="%.6f")

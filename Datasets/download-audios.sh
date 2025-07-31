@@ -31,6 +31,16 @@ yt-dlp -x "https://www.youtube.com/watch?v=aqhPZ5N-jG0" --audio-format mp3 -o 32
 yt-dlp -x "https://www.youtube.com/watch?v=6bcRqt3_h20" --audio-format mp3 -o 33.mp3
 yt-dlp -x "https://www.youtube.com/watch?v=tkzY_VwNIek" --audio-format mp3 -o 34.mp3
 yt-dlp -x "https://youtu.be/35XNPXS3QYs" --audio-format mp3 -o 35.mp3
+yt-dlp -x "https://www.youtube.com/shorts/USS3idLNyWo" --audio-format mp3 -o 36.mp3
+yt-dlp -x "https://www.youtube.com/shorts/RRiHwuXcuPQ" --audio-format mp3 -o 37.mp3
+yt-dlp -x "https://www.youtube.com/shorts/9-WLtabBq2Y" --audio-format mp3 -o 38.mp3
+yt-dlp -x "https://www.instagram.com/p/C82HrXepZBG/" --audio-format mp3 -o 39.mp3
+yt-dlp -x "https://www.instagram.com/p/DBpdr4JSjjS/" --audio-format mp3 -o 40.mp3
+yt-dlp -x "https://www.instagram.com/p/DCIaO04StyK/" --audio-format mp3 -o 41.mp3
+yt-dlp -x "https://www.instagram.com/p/DEEHBUnP1G-/" --audio-format mp3 -o 42.mp3
+yt-dlp -x "https://www.instagram.com/p/DHFIpq5S6SI/" --audio-format mp3 -o 43.mp3
+yt-dlp -x "https://www.instagram.com/p/DHR8-HnSFQ-/" --audio-format mp3 -o 44.mp3
+yt-dlp -x "https://www.instagram.com/p/DKGNdj9yHj6/" --audio-format mp3 -o 45.mp3
 
 # special care
 #yt-dlp -x "https://www.youtube.com/shorts/U4VjlWwNXwQ" --audio-format mp3 -o 11.mp3
