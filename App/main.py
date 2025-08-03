@@ -14,7 +14,7 @@ import yt_dlp
 ROOT = ""
 CWD = os.getcwd()
 LAYER = 64
-SEQ_LEN = 10 # 20 * 0.1 seconds
+SEQ_LEN = 5 # 20 * 0.1 seconds
 MODEL = tf.keras.models.load_model(
     ROOT +
     f"./Model/Models/model_lstm_{LAYER}_{LAYER}_seq_{SEQ_LEN}.keras"
